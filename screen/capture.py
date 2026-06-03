@@ -16,8 +16,9 @@ ScreenShot now carries every number needed to convert between them.
 """
 
 import base64
-import ctypes
 import io
+import platform
+import sys
 from dataclasses import dataclass
 from typing import List
 
@@ -51,8 +52,12 @@ class ScreenShot:
 
 def _query_dpi_scale() -> float:
     """Best-effort DPI scale for the primary monitor.
-    Returns 1.0 if anything goes wrong."""
+    Returns 1.0 on macOS/Linux or if anything goes wrong on Windows."""
+    if sys.platform != "win32":
+        # macOS and Linux handle DPI via Qt / the OS natively
+        return 1.0
     try:
+        import ctypes
         # GetDpiForSystem returns DPI as integer (96 = 100%, 144 = 150%)
         u = ctypes.windll.user32
         u.SetProcessDPIAware()

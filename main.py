@@ -1,6 +1,7 @@
 """
-Clicky for Windows — Entry Point.
+Clicky Cross-Platform — Entry Point.
 Boots Qt, spawns overlay+panel+tray, starts ambient mic listener, binds hotkey.
+Runs on Windows, macOS, and Linux.
 """
 
 import os
@@ -67,7 +68,7 @@ def main():
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(False)
     app.setApplicationName("Clicky")
-    app.setApplicationDisplayName("Clicky - AI Companion")
+    app.setApplicationDisplayName("Clicky - AI Companion (Cross-Platform)")
 
     # ── Core components ───────────────────────────────────────────────────────
     manager = CompanionManager()
@@ -185,12 +186,17 @@ def main():
     # Journal folder
     def _open_journal():
         import os, subprocess
-        base = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~")
+        base = os.environ.get("LOCALAPPDATA") or os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~")
         path = os.path.join(base, "Clicky")
         try:
-            os.startfile(path)
+            if sys.platform == "win32":
+                os.startfile(path)
+            elif sys.platform == "darwin":
+                subprocess.run(["open", path])
+            else:
+                subprocess.run(["xdg-open", path])
         except Exception:
-            subprocess.Popen(["explorer", path])
+            pass
     tray.on_journal_open.connect(_open_journal)
 
     # Attach document (drag-drop alternative — file picker)
@@ -267,7 +273,7 @@ def main():
     def _save_diagnostics():
         import datetime, json, platform, traceback
         from ai import ollama_bootstrap as ob
-        base = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~")
+        base = os.environ.get("LOCALAPPDATA") or os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~")
         out = Path(base) / "Clicky" / f"diagnostics-{datetime.datetime.now():%Y%m%d-%H%M%S}.txt"
         try:
             providers_d = cfg.describe()
@@ -303,7 +309,12 @@ def main():
             out.write_text("\n".join(report), encoding="utf-8")
             tray.show_notification("Diagnostics saved", str(out))
             try:
-                os.startfile(str(out))
+                if sys.platform == "win32":
+                    os.startfile(str(out))
+                elif sys.platform == "darwin":
+                    subprocess.run(["open", str(out)])
+                else:
+                    subprocess.run(["xdg-open", str(out)])
             except Exception:
                 pass
         except Exception as e:

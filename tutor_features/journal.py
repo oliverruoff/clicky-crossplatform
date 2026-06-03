@@ -31,7 +31,7 @@ _INTERVALS_DAYS = (1, 3, 7, 14, 30, 60, 120)
 
 
 def _db_path() -> Path:
-    base = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~")
+    base = os.environ.get("LOCALAPPDATA") or os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~")
     d = Path(base) / "Clicky"
     d.mkdir(parents=True, exist_ok=True)
     return d / "journal.db"

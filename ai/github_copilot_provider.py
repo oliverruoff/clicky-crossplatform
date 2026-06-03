@@ -60,7 +60,7 @@ USER_AGENT     = "GitHubCopilotChat/0.23.1"
 
 
 def _data_dir() -> Path:
-    base = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~")
+    base = os.environ.get("LOCALAPPDATA") or os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~")
     d = Path(base) / "Clicky"
     d.mkdir(parents=True, exist_ok=True)
     return d

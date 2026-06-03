@@ -364,7 +364,10 @@ class CompanionManager(QObject):
     def _get_llm(self) -> BaseLLMProvider:
         if self._llm is None:
             provider = cfg.llm_provider()
-            if provider == "claude":
+            if provider == "kimi":
+                from ai.kimi_provider import KimiProvider
+                self._llm = KimiProvider()
+            elif provider == "claude":
                 from ai.claude_provider import ClaudeProvider
                 self._llm = ClaudeProvider()
             elif provider == "openai":
@@ -866,7 +869,7 @@ class CompanionManager(QObject):
         self._current_model = model
 
     def set_active_provider(self, name: str):
-        """Runtime switch between claude / openai / copilot / gemini / ollama."""
+        """Runtime switch between kimi / claude / openai / copilot / gemini / ollama."""
         cfg.set_active_llm(name)
         self._llm = None           # force re-init on next query
         self._current_model = None
@@ -880,7 +883,7 @@ class CompanionManager(QObject):
                     self._submit(self._refresh_copilot_models())
             except Exception:
                 pass
-        elif name in ("claude", "openai", "gemini"):
+        elif name in ("kimi", "claude", "openai", "gemini"):
             try:
                 from ai.model_registry import cache_is_stale as _stale
                 if _stale(name):

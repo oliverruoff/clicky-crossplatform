@@ -140,7 +140,7 @@ def pull_model(
 # ─── Installer download / run ─────────────────────────────────────────────────
 
 def _default_installer_path() -> Path:
-    base = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~")
+    base = os.environ.get("LOCALAPPDATA") or os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~")
     d = Path(base) / "Clicky" / "downloads"
     d.mkdir(parents=True, exist_ok=True)
     return d / "OllamaSetup.exe"

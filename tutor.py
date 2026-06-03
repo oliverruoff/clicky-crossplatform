@@ -14,15 +14,28 @@ from ctypes import wintypes
 # ── Active-window title (for per-app context memory) ─────────────────────────
 
 def active_window_title() -> str:
+    import sys
     try:
-        u = ctypes.windll.user32
-        hwnd = u.GetForegroundWindow()
-        if not hwnd:
+        if sys.platform == "win32":
+            u = ctypes.windll.user32
+            hwnd = u.GetForegroundWindow()
+            if not hwnd:
+                return ""
+            n = u.GetWindowTextLengthW(hwnd)
+            buf = ctypes.create_unicode_buffer(n + 1)
+            u.GetWindowTextW(hwnd, buf, n + 1)
+            return buf.value or ""
+        elif sys.platform == "darwin":
+            # On macOS, try to get the frontmost app via AppleScript
+            import subprocess
+            result = subprocess.run(
+                ["osascript", "-e", 'tell application "System Events" to get name of first application process whose frontmost is true'],
+                capture_output=True, text=True, timeout=2
+            )
+            return result.stdout.strip() or ""
+        else:
+            # Linux — no reliable universal way without X11/Wayland specifics
             return ""
-        n = u.GetWindowTextLengthW(hwnd)
-        buf = ctypes.create_unicode_buffer(n + 1)
-        u.GetWindowTextW(hwnd, buf, n + 1)
-        return buf.value or ""
     except Exception:
         return ""
 

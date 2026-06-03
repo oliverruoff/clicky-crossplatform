@@ -35,6 +35,11 @@ CACHE_TTL_SECONDS = 30 * 24 * 60 * 60   # 30 days
 # the on-disk cache is empty. Reasonable defaults so Clicky still works
 # offline / on first run before refresh completes.
 _FALLBACKS: dict[str, list[dict]] = {
+    "kimi": [
+        {"id": "kimi-k2-vision-preview", "label": "Kimi K2 Vision", "vision": True},
+        {"id": "kimi-k2-5",              "label": "Kimi K2.5",      "vision": True},
+        {"id": "kimi-k2",                "label": "Kimi K2",        "vision": True},
+    ],
     "claude": [
         {"id": "claude-sonnet-4-6",          "label": "Claude Sonnet 4.6", "vision": True},
         {"id": "claude-opus-4-7",            "label": "Claude Opus 4.7",   "vision": True},
@@ -65,6 +70,31 @@ def _cache_path(provider: str) -> Path:
 
 
 # ─── Per-provider live fetchers ───────────────────────────────────────────────
+
+async def _fetch_kimi() -> list[dict]:
+    if not cfg.kimi_api_key:
+        return []
+    async with httpx.AsyncClient(timeout=15) as client:
+        r = await client.get(
+            "https://api.moonshot.ai/v1/models",
+            headers={"Authorization": f"Bearer {cfg.kimi_api_key}"},
+        )
+    r.raise_for_status()
+    data = r.json().get("data", [])
+    out = []
+    for m in data:
+        mid = m.get("id") or m.get("name")
+        if not mid:
+            continue
+        # All current Kimi models support vision
+        out.append({
+            "id": mid,
+            "label": m.get("display_name") or mid,
+            "vision": True,
+        })
+    out.sort(key=lambda m: m["id"], reverse=True)
+    return out
+
 
 async def _fetch_claude() -> list[dict]:
     if not cfg.anthropic_api_key:
@@ -168,6 +198,7 @@ async def _fetch_gemini() -> list[dict]:
 
 
 _FETCHERS = {
+    "kimi":    _fetch_kimi,
     "claude":  _fetch_claude,
     "openai":  _fetch_openai,
     "gemini":  _fetch_gemini,
@@ -265,4 +296,4 @@ if __name__ == "__main__":
                     print(f"[{prov}] FAILED: {e}")
         asyncio.run(_run())
     else:
-        print("Usage: python -m ai.model_registry [show|refresh] [claude|openai|gemini]")
+        print("Usage: python -m ai.model_registry [show|refresh] [kimi|claude|openai|gemini]")

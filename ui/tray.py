@@ -66,7 +66,7 @@ class TrayManager(QObject):
         self._tray = QSystemTrayIcon()
         self._tray.setIcon(self._icons["idle"])
         self._tray.setToolTip(
-            f"Clicky - AI Companion\nHold {cfg.hotkey} to speak"
+            f"Clicky - AI Companion (Cross-Platform)\nHold {cfg.hotkey} to speak"
         )
         self._search_enabled = True
         self._wake_enabled = True

@@ -19,6 +19,8 @@ class Config:
     anthropic_api_key: Optional[str] = field(default_factory=lambda: os.getenv("ANTHROPIC_API_KEY") or None)
     openai_api_key: Optional[str] = field(default_factory=lambda: os.getenv("OPENAI_API_KEY") or None)
     google_api_key: Optional[str] = field(default_factory=lambda: os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY") or None)
+    kimi_api_key: Optional[str] = field(default_factory=lambda: os.getenv("KIMI_API_KEY") or os.getenv("MOONSHOT_API_KEY") or None)
+    kimi_model: str = field(default_factory=lambda: os.getenv("KIMI_MODEL", "kimi-k2-vision-preview"))
     ollama_host: str = field(default_factory=lambda: os.getenv("OLLAMA_HOST", "http://localhost:11434"))
     # Legacy single-model knob — still respected as a fallback for both slots
     # below. New users should prefer OLLAMA_VISION_MODEL / OLLAMA_TEXT_MODEL.
@@ -46,11 +48,13 @@ class Config:
     def llm_provider(self) -> str:
         """Returns the active LLM provider (runtime override > priority chain).
 
-        Priority chain: Claude > OpenAI > GitHub Copilot > Gemini > Ollama.
+        Priority chain: Kimi > Claude > OpenAI > GitHub Copilot > Gemini > Ollama.
         """
         override = os.environ.get("CLICKY_ACTIVE_LLM", "").strip().lower()
         if override in self.available_llm_providers():
             return override
+        if self.kimi_api_key:
+            return "kimi"
         if self.anthropic_api_key:
             return "claude"
         if self.openai_api_key:
@@ -68,6 +72,8 @@ class Config:
     def available_llm_providers(self) -> list[str]:
         """All providers the user can switch to right now."""
         out = []
+        if self.kimi_api_key:
+            out.append("kimi")
         if self.anthropic_api_key:
             out.append("claude")
         if self.openai_api_key:
@@ -123,6 +129,7 @@ class Config:
             "stt": self.stt_provider(),
             "tts": self.tts_provider(),
             "search": self.search_provider(),
+            "kimi_model": self.kimi_model,
             "ollama_model": self.ollama_model,
             "ollama_vision_model": self.get_ollama_model("vision"),
             "ollama_text_model":   self.get_ollama_model("text"),

@@ -33,7 +33,7 @@ from config import cfg
 
 # Marker file: the wizard skips itself if this exists.
 def _flag_path() -> Path:
-    base = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~")
+    base = os.environ.get("LOCALAPPDATA") or os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~")
     d = Path(base) / "Clicky"
     d.mkdir(parents=True, exist_ok=True)
     return d / "setup_complete.flag"
